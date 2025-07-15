@@ -9,32 +9,25 @@ st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 # === INDEX DATA from NSE ===
 def get_nse_index_data():
+    url = "https://www.nseindia.com/api/allIndices"
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
     try:
-        url = "https://api.brotherslab.in/indices"  # Public proxy API
-        res = requests.get(url, timeout=10)
-        json_data = res.json()
-
-        indexes = {
-            "NIFTY 50": "NIFTY 50",
-            "NIFTY BANK": "NIFTY BANK",
-            "SENSEX": "SENSEX"
-        }
-
-        data = {}
-        for item in json_data:
-            if item['indexName'] in indexes.values():
-                data[item['indexName']] = {
-                    "Last Price": item['last'],
-                    "Change": item['variation'],
-                    "Change %": item['percentChange']
+        r = requests.get(url, headers=headers, timeout=10)
+        data = r.json()["data"]
+        result = {}
+        for item in data:
+            if item["index"] in ["NIFTY 50", "NIFTY BANK", "S&P BSE SENSEX"]:
+                result[item["index"]] = {
+                    "Last Price": item["last"],
+                    "Change": item["change"],
+                    "Change %": round(item["percentChange"], 2)
                 }
-
-        return pd.DataFrame(data).T
-
+        return pd.DataFrame(result).T
     except Exception as e:
         st.error(f"Could not fetch index data: {e}")
         return pd.DataFrame()
-
 
 st.subheader("📈 Live Indices (NSE)")
 st.dataframe(get_nse_index_data(), use_container_width=True)
@@ -53,5 +46,6 @@ st.components.v1.html(f"""
 
 st.markdown("---")
 st.markdown("Made with ❤️ by @AlphaTradex")
+
 
 

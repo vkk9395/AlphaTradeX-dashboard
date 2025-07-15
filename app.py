@@ -8,32 +8,16 @@ st.title("📊 AlphaTradex – Indian Market Dashboard 🇮🇳")
 st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 # === INDEX DATA from NSE ===
-def get_nse_index_data():
-    try:
-        url = "https://api.brotherslab.in/indices"  # Public proxy API
-        res = requests.get(url, timeout=10)
-        json_data = res.json()
+st.subheader("📈 Live Indices – TradingView Widget")
 
-        indexes = {
-            "NIFTY 50": "NIFTY 50",
-            "NIFTY BANK": "NIFTY BANK",
-            "SENSEX": "SENSEX"
-        }
-
-        data = {}
-        for item in json_data:
-            if item['indexName'] in indexes.values():
-                data[item['indexName']] = {
-                    "Last Price": item['last'],
-                    "Change": item['variation'],
-                    "Change %": item['percentChange']
-                }
-
-        return pd.DataFrame(data).T
-
-    except Exception as e:
-        st.error(f"Could not fetch index data: {e}")
-        return pd.DataFrame()
+st.components.v1.html("""
+<!-- TradingView Widget BEGIN -->
+<div class="tradingview-widget-container">
+  <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_xxx&symbols=NSE:NIFTY,INDEX:NSEBANK,INDEX:BSESN&theme=light&style=1&locale=en" 
+  width="100%" height="100" frameborder="0"></iframe>
+</div>
+<!-- TradingView Widget END -->
+""", height=100)
 
 
 st.subheader("📈 Live Indices (NSE)")

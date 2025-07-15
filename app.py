@@ -1,61 +1,50 @@
 import streamlit as st
 import requests
-from datetime import datetime
 import pandas as pd
+from datetime import datetime
 
 st.set_page_config(page_title="AlphaTradex – Indian Market Dashboard", layout="wide")
-
 st.title("📊 AlphaTradex – Indian Market Dashboard 🇮🇳")
-st.caption(f"Live market overview – Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-# === INDEX DATA ===
-st.subheader("📈 Live Indices")
-
-def get_index_data():
-    indices = {
-        "Nifty 50": "^NSEI",
-        "Bank Nifty": "^NSEBANK",
-        "Sensex": "^BSESN"
+# === INDEX DATA from NSE ===
+def get_nse_index_data():
+    url = "https://www.nseindia.com/api/allIndices"
+    headers = {
+        "User-Agent": "Mozilla/5.0"
     }
-    data = {}
-    for name, symbol in indices.items():
-        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?range=1d&interval=1m"
-        r = requests.get(url)
-        json_data = r.json()
-        try:
-            current = json_data["chart"]["result"][0]["meta"]["regularMarketPrice"]
-            prev_close = json_data["chart"]["result"][0]["meta"]["chartPreviousClose"]
-            change = current - prev_close
-            pct = (change / prev_close) * 100
-            data[name] = {"Price": round(current, 2), "Change": round(change, 2), "Change (%)": round(pct, 2)}
-        except:
-            data[name] = {"Price": "N/A", "Change": "N/A", "Change (%)": "N/A"}
-    return pd.DataFrame(data).T
-
-st.dataframe(get_index_data(), use_container_width=True)
-
-# === NEWS ===
-st.subheader("📰 Market News (Moneycontrol)")
-def get_news():
-    url = "https://newsapi.org/v2/top-headlines?sources=moneycontrol&apiKey=demo"  # Replace demo with your key
     try:
-        res = requests.get(url)
-        articles = res.json()["articles"]
-        for article in articles[:5]:
-            st.markdown(f"🔹 [{article['title']}]({article['url']})")
-    except:
-        st.write("⚠️ Could not fetch news.")
+        r = requests.get(url, headers=headers, timeout=10)
+        data = r.json()["data"]
+        result = {}
+        for item in data:
+            if item["index"] in ["NIFTY 50", "NIFTY BANK", "S&P BSE SENSEX"]:
+                result[item["index"]] = {
+                    "Last Price": item["last"],
+                    "Change": item["change"],
+                    "Change %": round(item["percentChange"], 2)
+                }
+        return pd.DataFrame(result).T
+    except Exception as e:
+        st.error(f"Could not fetch index data: {e}")
+        return pd.DataFrame()
 
-# Optional: Replace with RSS feed parsing for free if needed
+st.subheader("📈 Live Indices (NSE)")
+st.dataframe(get_nse_index_data(), use_container_width=True)
 
-# === CHART VIEW ===
+# === NEWS PLACEHOLDER ===
+st.subheader("📰 Market News (Coming Soon)")
+st.info("News feature will be added shortly using RSS or Telegram Bot.")
+
+# === CHART ===
 st.subheader("📊 TradingView Chart")
-selected_symbol = st.text_input("Enter NSE stock symbol (e.g., RELIANCE, INFY, SBIN)", value="RELIANCE")
+symbol = st.text_input("Enter NSE stock symbol (e.g., RELIANCE)", value="RELIANCE")
 st.components.v1.html(f"""
-    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_xxx&symbol=NSE:{selected_symbol.upper()}&interval=15&theme=light&style=1&locale=en" 
+    <iframe src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_xxx&symbol=NSE:{symbol.upper()}&interval=15&theme=light&style=1&locale=en" 
     width="100%" height="500" frameborder="0"></iframe>
 """, height=500)
 
 st.markdown("---")
 st.markdown("Made with ❤️ by @AlphaTradex")
+
 
